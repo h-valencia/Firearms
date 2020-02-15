@@ -1,0 +1,96 @@
+---
+title: "Milestone 2"
+author: "Hannah Valencia"
+date: "2/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# loading in necessary libraries for access to commands.
+# set echo equal to false so that the code does not show up in html
+
+library(dplyr)
+library(tidyverse)
+```
+
+
+```{r ReadData}
+
+# Used read.table to read in the data table of background checks by state.
+
+firearms <- read.table("bckcheck-state-public.tab")
+
+# Moved the first row of data to the column titles
+
+names(firearms) <- as.matrix(firearms[1, ])
+firearms <- firearms[-1, ]
+firearms[] <- lapply(firearms, function(x) type.convert(as.character(x)))
+```
+
+
+
+```{r EditDataframe}
+
+# creating a dataframe with a column for each year by using pivot wider so that the data is neater.
+
+fa <- firearms %>%
+  group_by(year, stname) %>%
+  pivot_wider(names_from = year, values_from = total)
+```
+
+
+```{r TopStates}
+
+# Finding the states with the most background checks by summing for each state across all years.
+
+fa$sum <- rowSums(fa[,4:21])
+
+# Looking only at data from December to make things easier.
+# Arranged in descending order and selected only the top 10 states.
+
+fa <- fa %>%
+  filter(month == 12) %>%
+  arrange(desc(sum)) %>%
+  head(10) %>%
+  select(stname)
+
+# Created a list with the top 10 states to make filtering later easier.
+
+topst <- c("KY", "TX", "CA", "IL", "PA", "FL", "OH", "GA", "AL", "TN")
+```
+
+
+```{r SimplePlot}
+
+# Used scipen = 999 to get rid of scientific notation
+
+options(scipen = 999)
+
+# Filtering the data for only December data in the top 10 states.
+
+firearms <- firearms %>%
+  filter(month == 12) %>%
+  filter(stname %in% topst)
+  
+# Created a simple bar plot of the number of background checks per year by state.
+
+firearms %>%
+  group_by(stname) %>%
+  ggplot(aes(x = year, y = total)) +
+  geom_col() +
+  facet_wrap(~stname) +
+  labs(x = "Year", y = "Total background checks", title = "Background checks from 1999-2016 by state", subtitle = "For the 10 states with the most background checks.", caption = "Source: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EVLKBN")
+
+```
+
+
+
+
+
+
+
+
+
+
